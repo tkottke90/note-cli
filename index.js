@@ -1,6 +1,11 @@
 #!/usr/bin/env node
-const cli = require('./modules/inquirer')();
-
 const [,, command, ...args] = process.argv;
 
-cli.exclude();
+const initialize = async () => {
+	const cli = await require('inquirer.module')();
+
+	
+
+}
+
+initialize();
