@@ -1,0 +1,24 @@
+{
+  "name": "git-note-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "NODE_ENV=development nodemon index.js",
+    "test": ""
+  },
+  "bin": {
+    "update-notes": "./index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "inquirer": "^7.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^6.2.1",
+    "nodemon": "^1.19.3"
+  }
+}
