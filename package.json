@@ -14,8 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chalk": "^2.4.2",
-    "inquirer": "^7.0.0"
+    "inquirer.module": "file:modules/inquirer.module"
   },
   "devDependencies": {
     "mocha": "^6.2.1",

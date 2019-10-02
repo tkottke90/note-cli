@@ -22,7 +22,7 @@ const excludeList = async () => {
 
 module.exports = async () => {
 	if (!(await checkGit())) {
-		console.error(`${chalk('\nInvalid Directory - Missing GIT!\n')}`);
+		console.error(`${chalk('Invalid Directory - Missing GIT!')}`);
 		process.exit(1);
 	}
 
