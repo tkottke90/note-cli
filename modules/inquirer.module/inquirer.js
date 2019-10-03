@@ -88,6 +88,125 @@ const excludeList = async () => {
 	}
 }
 
+const commitPrompt = async () => {
+	console.log(chalk.hex('#BA5B50')(outputHeader(['Generate a new commit'])));
+
+	const commitTypes = [ 'feat', 'refactor', 'merge', 'fix', 'docs', 'build/ci', 'chore', 'revert', 'test' ].sort();	
+	const { stdout: files } = await exec('git status -su', { cwd: process.cwd() });
+
+	const fileList = files.split('\n').filter( item => item.length > 1).map( item => {
+		const parts = item.split(' ');
+
+		return parts[parts.length - 1];
+	});
+
+	if (fileList.length === 0) {
+		console.log(`\n${chalk.blue('!!')} No Untracked Files in repository \n`)
+		process.exit(0);
+	}
+
+	const answers = await inquirer.prompt([
+		{
+			type: 'checkbox',
+			name: 'files',
+			choices: fileList,
+			message: `Select files to commit`,
+			validate: (answers) => {
+				return answers.length > 0 ? true : 'You must select at least one file'
+			}
+		},
+		{
+			type: 'list',
+			name: 'type',
+			choices: commitTypes,
+			message: 'Select the type of commit'
+		},
+		{
+			type: 'input',
+			name: 'message',
+			message: 'Enter a commit message (50 char max)',
+			validate: (answer) => {
+				return answer.length < 50 ? true : 'Commit messages must be less than 50 characters'
+			}
+		},
+		{
+			type: 'input',
+			name: 'ticket',
+			default: "N/A",
+			message: '(optional) Enter the tracking ticket number:',
+			when: (res) => {
+				return res !== 'N/A' || res !== 'n/a'; 
+			}
+		},
+		{
+			type: 'input',
+			name: 'why',
+			default: "N/A",
+			message: '(optional) Enter description of why the commit is being submitted:',
+			when: (res) => {
+				return res !== 'N/A' || res !== 'n/a'; 
+			}
+		},
+		{
+			type: 'input',
+			name: 'how',
+			default: "N/A",
+			message: '(optional) Enter description of how the commit addresses the issue:',
+			when: (res) => {
+				return res !== 'N/A' || res !== 'n/a'; 
+			}
+		},
+		{
+			type: 'input',
+			name: 'side_effects',
+			default: "N/A",
+			message: '(optional) Enter any possible problems related to this the addition of this commit:',
+			when: (res) => {
+				return res !== 'N/A' || res !== 'n/a'; 
+			}
+		}
+	]);
+
+	console.dir(answers);
+
+	const commit = 
+		`${answers.type}:${answers.message}
+## Git Commit Template v1.0
+## Template supports the logging of information related to the ticket based on multiple git commit template philosophies
+
+# Files committed:
+${answers.files.map( file => `\t- ${file}`).join('\n')}
+
+# Ticketing System Information
+  ${answers.ticket === 'N/A' ? '# ticket: <tracking ticket>' : `ticket: ${answers.ticket}`}
+
+# Summery:
+  Why is this change necessary?
+	  ${answers.why}
+	How does it address the issue?
+    ${answers.why}
+	What side effects does this change have?
+	  ${answers.side_effects}
+		`
+
+	console.log({
+		add: `git add ${answers.files.join(' ')}`,
+		commit: `git commit -m ${commit}`
+	});
+
+	try {
+		const { stdout: addStdout } = await exec(`git add ${answers.files.join(' ')}`);
+		const { stdout } = await exec(`git commit -m '${commit}'`);
+	
+	} catch (err) {
+		console.log(chalk.red('Error Committing Files!'));
+		console.error(err);
+		process.exit(1);
+	}
+
+
+}
+
 /* -- Module Functions -- */
 module.exports = async () => {
 	if (!(await checkGit())) {
@@ -96,6 +215,7 @@ module.exports = async () => {
 	}
 
 	return {
-		exclude: excludeList
+		exclude: excludeList,
+		commit: commitPrompt
 	}
 }
