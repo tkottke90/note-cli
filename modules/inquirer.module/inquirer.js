@@ -167,37 +167,46 @@ const commitPrompt = async () => {
 		}
 	]);
 
-	console.dir(answers);
+	const commit = [
+		`${answers.type}:${answers.message}`,
+		'## Git Commit Template v1.0',
+		'## Author: Thomas Kottke <admin@tdkottke.com>',
+		'## Template supports the logging of information related to the ticket based on multiple git commit template philosophies',
+		'',
+		'# Files committed:',
+		answers.files.map( file => `  - ${file}`).join('\n'),
+		'',
+		'# Ticketing System Information',
+		`${answers.ticket === 'N/A' ? '  # ticket: <tracking ticket>' : `  ticket: ${answers.ticket}`}`,
+		'',
+		'# Commit Summery:',
+		'  Why is the change necessary?',
+		`    ${answers.why}`,
+		'  How does it address the issue?',
+    `    ${answers.how}`,
+		`  What side effects does this change have?`,
+	  `    ${answers.side_effects}`
+	];
 
-	const commit = 
-		`${answers.type}:${answers.message}
-## Git Commit Template v1.0
-## Template supports the logging of information related to the ticket based on multiple git commit template philosophies
+	console.log('\n', chalk.blue(commit.join('\n')), '\n');
 
-# Files committed:
-${answers.files.map( file => `\t- ${file}`).join('\n')}
+	const confirm = await inquirer.prompt([
+		{
+			type: 'confirm',
+			default: false,
+			name: 'value',
+			message: 'Does this commit look correct?'
+		}
+	]);
 
-# Ticketing System Information
-  ${answers.ticket === 'N/A' ? '# ticket: <tracking ticket>' : `ticket: ${answers.ticket}`}
-
-# Summery:
-  Why is this change necessary?
-	  ${answers.why}
-	How does it address the issue?
-    ${answers.why}
-	What side effects does this change have?
-	  ${answers.side_effects}
-		`
-
-	console.log({
-		add: `git add ${answers.files.join(' ')}`,
-		commit: `git commit -m ${commit}`
-	});
+	if (!confirm.value){
+		console.log(chalk.blue('\n Aborting Commit \n'));
+		return;
+	}
 
 	try {
-		const { stdout: addStdout } = await exec(`git add ${answers.files.join(' ')}`);
-		const { stdout } = await exec(`git commit -m '${commit}'`);
-	
+		await exec(`git add ${answers.files.join(' ')}`);
+		await exec(`git commit -m '${commit.join('\n')}'`);
 	} catch (err) {
 		console.log(chalk.red('Error Committing Files!'));
 		console.error(err);
