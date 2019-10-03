@@ -42,7 +42,7 @@ This command will check your local git repository for any untracked files:
 
 Using your keyboard (up and down to navigate, and space to select) select the files you wish to exclude.  Once you have selected the files, click Enter to save your changes.
 
-<h3 id="commit">Commit</a>
+<h3 id="commit">Commit</h3>
 
 This command will walk through the commit process and generate a commit message for you with the following format:
 
