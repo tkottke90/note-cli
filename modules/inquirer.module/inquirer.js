@@ -53,7 +53,7 @@ const excludeList = async () => {
 	
 	const { stdout: files } = await exec('git status -su', { cwd: process.cwd() });
 
-	const fileList = files.split('\n').filter( item => item.length > 1 && item.startsWith('?')).map( item => item.split(' ')[1]);
+	const fileList = files.split('\n').filter( item => item.length > 1 && item.startsWith('?')).map( item => item.slice(3));
 
 	if (fileList.length === 0) {
 		console.log(`\n${chalk.blue('!!')} No Untracked Files in repository \n`)
@@ -78,7 +78,7 @@ const excludeList = async () => {
 	try {
 		let excludeFile = await readFile(exclude, 'utf8');
 	
-		excludeFile += `\n${answers.files.join('\n')}`;
+		excludeFile += `\n${answers.files.join('\n').replace('"', '')}`;
 	
 		const result = await writeFile(exclude, excludeFile, { encoding: 'utf8' });
 	
@@ -95,9 +95,9 @@ const commitPrompt = async () => {
 	const { stdout: files } = await exec('git status -su', { cwd: process.cwd() });
 
 	const fileList = files.split('\n').filter( item => item.length > 1).map( item => {
-		const parts = item.split(' ');
+		const parts = item.slice(3);
 
-		return parts[parts.length - 1];
+		return `${parts}`;
 	});
 
 	if (fileList.length === 0) {
