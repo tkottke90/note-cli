@@ -38,7 +38,7 @@ To get started run the node-cli tool with the following command:
 
 This command will check your local git repository for any untracked files:
 
-![exclude_screenshot](./docs/exclude_screenshot)
+![exclude_screenshot](docs/assets/exclude_screenshot)
 
 Using your keyboard (up and down to navigate, and space to select) select the files you wish to exclude.  Once you have selected the files, click Enter to save your changes.
 
@@ -73,34 +73,34 @@ To get started, run the note-cli tool with the following command:
 
 Using your keyboard (up and down to navigate, and space to select) select the files you wish to commit.  Once you have selected the files, click Enter to save your changes.
 
-![commit_screenshot1]()
+![commit_screenshot1](docs/assets/commit_screenshot1)
 
 Select a type of commit:
 
-![commit_screenshot2]()
+![commit_screenshot2](docs/assets/commit_screenshot2)
 
 Enter a commit message:
 
-![commit_screenshot3]()
+![commit_screenshot3](docs/assets/commit_screenshot3)
 
 Optionally enter a ticket number if you are using a ticketing system with you project:
 
-![commit_screenshot4]()
+![commit_screenshot4](docs/assets/commit_screenshot4)
 
 Optionally enter a description of why the commit is necessary:
 
-![commit_screenshot5]()
+![commit_screenshot5](docs/assets/commit_screenshot5)
 
 Optionally enter a description of how the commit fixes any issues:
 
-![commit_screenshot6]()
+![commit_screenshot6](docs/assets/commit_screenshot6)
 
 Optionally enter a description of any possible side effects that you think may come as a result of this commit:
 
-![commit_screenshot7]()
+![commit_screenshot7](docs/assets/commit_screenshot7)
 
 The script will generate your commit message and display it for your review:
 
-![commit_screenshot8]()
+![commit_screenshot8](docs/assets/commit_screenshot8)
 
 To confirm your changes enter 'y' and the commit will be submitted
