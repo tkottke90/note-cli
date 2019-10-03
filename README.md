@@ -24,7 +24,7 @@ Once you have installed the tool,  you can use by running this command in your t
 2. <a href="#commit">Commit</a> - A command line to to walk through the creation and submittion of a commit
 
 
-<h3 id="exclude">Exclude</a>
+<h3 id="exclude">Exclude</h3>
 
 This command will add files to the repositories [exclude file](https://help.github.com/en/articles/ignoring-files#explicit-repository-excludes).  Files listed in the exclude file are ignored by git locally, but are not ignored outside of your local repository.  This is a great place to put files that you know you will uniquely generate, such as:
 
