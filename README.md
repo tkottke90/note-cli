@@ -38,7 +38,7 @@ To get started run the node-cli tool with the following command:
 
 This command will check your local git repository for any untracked files:
 
-![exclude_screenshot]()
+![exclude_screenshot](./docs/exclude_screenshot)
 
 Using your keyboard (up and down to navigate, and space to select) select the files you wish to exclude.  Once you have selected the files, click Enter to save your changes.
 
