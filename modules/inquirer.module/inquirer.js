@@ -7,14 +7,16 @@ const { promisify } = require('util');
 
 /* -- Promisified Functions -- */
 const exec = promisify(child.exec);
+const exists = promisify(fs.exists);
 const readFile = promisify(fs.readFile);
+const readDir = promisify(fs.readdir);
 const writeFile = promisify(fs.writeFile);
 
 /* -- Utility Functions -- */
 const getGitLocation = async () => {
 	try {
 		const { stdout } = await exec('git rev-parse --show-toplevel', { cwd: process.cwd() });
-		return stdout;
+		return stdout.split('\n')[0];
 	} catch (error) {
 		return false;
 	}
@@ -47,6 +49,37 @@ const outputHeader = headerText => {
 	return `┌${widthStr}┐\n${output}\n└${widthStr}┘`;
 }
 
+const notableParse = async () => {
+	// Check cwd for .notable_dir flag
+	const gitDir = await getGitLocation();
+	const notableFlag = await exists(path.join(gitDir, '.notable_dir'));
+	const notes = await exists(path.join(gitDir, 'notes'));
+	const attachments = await exists(path.join(gitDir, 'attachments'));
+
+	if (!gitDir || !notableFlag || !notes || !attachments) {
+		console.log(`\n${chalk.blue('!!')} Not a Notable Directory \n\n${ !gitDir ? '  - Initialize git for this directory\n' : '' }${ !notableFlag ? '  - Tag this as a notable directory by adding the .notable_dir flag with: echo >> .notable_dir\n' : '' }${ !notes ? '  - A "notes" directory is required\n' : '' }${ !attachments ? '  - An "attachments" directory is required' : '' }\n`)
+		process.exit(0);
+	}
+
+	const cwd = path.join(gitDir, 'notes');
+
+	const files = await readDir(cwd);
+
+	console.log(files);
+
+	files.map( async filename => {
+		const data = await readFile(path.join(cwd, filename));
+
+		const dataArr = data.split('\n');
+
+	});
+
+	const tableWidths = {
+		filenames: files.reduce( (acc, cur) => acc > cur.name.length ? acc : cur.name.length, 1),
+	}
+
+}
+
 /* -- Module Functions -- */
 const excludeList = async () => {
 	console.log(chalk.hex('#BA5B50')(outputHeader(['Add files to Git Exclude file', '','   https://help.github.com/en/articles/ignoring-files#explicit-repository-excludes'])));
@@ -73,7 +106,7 @@ const excludeList = async () => {
 	]);
 
 	const git = await getGitLocation();
-	const exclude = `${git.split('\n')[0]}/.git/info/exclude`;
+	const exclude = `${git}/.git/info/exclude`;
 
 	try {
 		let excludeFile = await readFile(exclude, 'utf8');
@@ -91,7 +124,7 @@ const excludeList = async () => {
 const commitPrompt = async () => {
 	console.log(chalk.hex('#BA5B50')(outputHeader(['Generate a new commit'])));
 
-	const commitTypes = [ 'feat', 'refactor', 'merge', 'fix', 'docs', 'build/ci', 'chore', 'revert', 'test' ].sort();	
+	const commitTypes = [ 'feat', 'refactor', ...['merge', 'fix', 'docs', 'build/ci', 'chore', 'revert', 'test' ].sort()];	
 	const { stdout: files } = await exec('git status -su', { cwd: process.cwd() });
 
 	const fileList = files.split('\n').filter( item => item.length > 1).map( item => {
@@ -225,6 +258,7 @@ module.exports = async () => {
 
 	return {
 		exclude: excludeList,
-		commit: commitPrompt
+		commit: commitPrompt,
+		notable: notableParse
 	}
 }
