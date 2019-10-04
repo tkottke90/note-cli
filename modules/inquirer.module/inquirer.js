@@ -200,11 +200,12 @@ const commitPrompt = async () => {
 		}
 	]);
 
-	const commit = [
+	let commit = [
 		`${answers.type}:${answers.message}`,
 		'## Git Commit Template v1.0',
 		'## Author: Thomas Kottke <admin@tdkottke.com>',
-		'## Template supports the logging of information related to the ticket based on multiple git commit template philosophies',
+		'## Template supports the logging of information related to the ',
+		'##    ticket based on multiple git commit template philosophies',
 		'',
 		'# Files committed:',
 		answers.files.map( file => `  - ${file}`).join('\n'),
@@ -213,13 +214,53 @@ const commitPrompt = async () => {
 		`${answers.ticket === 'N/A' ? '  # ticket: <tracking ticket>' : `  ticket: ${answers.ticket}`}`,
 		'',
 		'# Commit Summery:',
-		'  Why is the change necessary?',
-		`    ${answers.why}`,
-		'  How does it address the issue?',
+		'# Why is the change necessary?',
+		`${answers.why}`,
+		'',
+		'# How does it address the issue?',
     `    ${answers.how}`,
-		`  What side effects does this change have?`,
+		'',
+		`# What side effects does this change have?`,
 	  `    ${answers.side_effects}`
 	];
+
+	// Check commit to ensure that all lines are less than 72 characters, if not wrap
+	commit = commit.reduce( (acc, cur) => {
+		if (cur.length < 72 || cur.charAt(0) === '#') {
+			return [ ...acc, `${cur}` ];
+		}
+
+		let output = [];
+		const length = cur.length;
+		const max = 68;
+		const pages = Math.ceil(length / max);
+		for (let i = 0; i < pages; i++) {
+			let start = i * max;
+			let end = start + max;
+
+			// While the current character at the position of start is not a space or new line move back 1 character
+			while( ![' ', '\n'].includes(cur.slice(start, (start + 1))) && start !== 0 ) {
+				start -= 1;
+			}
+
+			while( ![' ', '\n'].includes(cur.slice(end, (end + 1))) && end !== start ) {
+				end -= 1;
+			}
+
+			console.log({
+				start,
+				end: {
+					isSpecialChar: [' ', '\n'].includes(cur.slice(end, (end + 1))),
+					char: cur.slice(end, (end + 1))
+				},
+				slice: cur.slice(start, end)
+			})
+
+			output.push(`    ${cur.slice( start, end )}`);
+		}
+
+		return [ ...acc, ...output ];
+	}, []);
 
 	console.log('\n', chalk.blue(commit.join('\n')), '\n');
 
@@ -239,7 +280,7 @@ const commitPrompt = async () => {
 
 	try {
 		await exec(`git add ${answers.files.join(' ')}`);
-		await exec(`git commit -m '${commit.join('\n')}'`);
+		await exec(`git commit -m "${commit.join('\n')}"`);
 	} catch (err) {
 		console.log(chalk.red('Error Committing Files!'));
 		console.error(err);
