@@ -87,6 +87,12 @@ Optionally enter a ticket number if you are using a ticketing system with you pr
 
 ![commit_screenshot4](docs/assets/commit_screenshot4)
 
+<div style="background-color: #e6e6e6; padding: 1rem">
+  <p>This is also a great place to reference other github items such as issues, pull requests, or commits.</p>
+
+  <p><a href="https://help.github.com/en/articles/autolinked-references-and-urls">Github Documentation</p>
+</div>
+
 Optionally enter a description of why the commit is necessary:
 
 ![commit_screenshot5](docs/assets/commit_screenshot5)
