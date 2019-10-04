@@ -124,7 +124,19 @@ const excludeList = async () => {
 const commitPrompt = async () => {
 	console.log(chalk.hex('#BA5B50')(outputHeader(['Generate a new commit'])));
 
-	const commitTypes = [ 'feat', 'refactor', ...['merge', 'fix', 'docs', 'build/ci', 'chore', 'revert', 'test' ].sort()];	
+	const commitTypes = [ 
+		{ name: `feat      ${chalk.grey('(A new Feature)')}`, value: 'feat' },
+		{ name: `refactor  ${chalk.grey('(A code change that neither fixes a bug nor adds a feature)')}`, value: 'refactor'},
+		...[
+			{ name: `merge     ${chalk.grey('(A merging of 2 git branches)')}`, value: 'merge'},
+			{ name: `fix       ${chalk.grey('(A bug fix)')}`, value: 'fix'},
+			{ name: `docs      ${chalk.grey('(Documentation only changes)')}`, value: 'docs'},
+			{ name: `build/cli ${chalk.grey('(Changes that affect the build/ci system)')}`, value: 'build/ci'},
+			{ name: `chore     ${chalk.grey('(Other changes that don\'t modify src or test files)')}`, value: 'chore'},
+			{ name: `revert    ${chalk.grey('(Reverts a previous commit)')}`, value: 'revert'},
+			{ name: `test      ${chalk.grey('(Adding missing tests or correcting existing tests)')}`, value: 'test'},
+			{ name: `style     ${chalk.grey('(Changes that do not affect the meaning of the code)')}`, value: 'style'}
+		].sort( (a, b) => a.name > b.name ? 1 : -1 )];	
 	const { stdout: files } = await exec('git status -su', { cwd: process.cwd() });
 
 	const fileList = files.split('\n').filter( item => item.length > 1).map( item => {
@@ -152,7 +164,8 @@ const commitPrompt = async () => {
 			type: 'list',
 			name: 'type',
 			choices: commitTypes,
-			message: 'Select the type of commit'
+			message: 'Select the type of commit',
+
 		},
 		{
 			type: 'input',
