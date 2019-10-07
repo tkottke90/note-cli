@@ -171,8 +171,14 @@ const commitPrompt = async () => {
 			type: 'input',
 			name: 'message',
 			message: 'Enter a commit message (50 char max)',
+			transformer: (input) => {
+				if( input.length > 50 ) {
+					return chalk.red(input);
+				}
+				return input;
+			},
 			validate: (answer) => {
-				return answer.length < 50 ? true : 'Commit messages must be less than 50 characters'
+				return answer.length < 50 ? true : `Commit messages must be less than 50 characters (length: ${answer.length})`
 			}
 		},
 		{
