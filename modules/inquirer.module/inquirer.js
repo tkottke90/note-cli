@@ -326,7 +326,7 @@ const generateNodeApp = async () => {
 	console.log(chalk.hex('#BA5B50')(outputHeader(['Generate New Node App'])));
 	
 	// Get name of application
-	let answers = await inquirer.prompt([
+	let { name } = await inquirer.prompt([
 		{
 			type: 'input',
 			name: 'name',
@@ -334,11 +334,12 @@ const generateNodeApp = async () => {
 		}
 	]);
 
-	answers.path = [ '/home' ];
-
+	// Get file location for the application
+	let appPath = [ ...require('os').homedir().split('/') ];
+	appPath[0] = '/'
 	let dirNotSelected = true;
 	while (dirNotSelected) {
-			const files = await readDir(path.join(...answers.path));
+			const files = await readDir(path.join(...appPath));
 			const choices = [ ...files.filter( item => !item.startsWith('.')), new inquirer.Separator(), { name: 'Up 1 Level', value: '..' }, { name: 'Submit', value: true } ];
 
 			const { location } = await inquirer.prompt([
@@ -351,20 +352,162 @@ const generateNodeApp = async () => {
 				}
 			]);
 
-			if (location === '') {
-				return answers.path.pop();
+			if (location === '..') {
+				appPath.pop();
+				break;
 			}
 
 			if (typeof location === 'boolean') {
 				dirNotSelected = false;
-				answers.path = answers.path.join('/');
-				return;
+				appPath = appPath.join('/');
+				break;
 			}
 
-			answers.path.push(location);
+			appPath.push(location);
 	} 
 
-	console.log(answers);
+	// Offer to install suggested production packages
+	const suggestedPackages = [ 'express', 'winston', { name: 'socket.io', value: 'socket.io socket.io-client'}, 'chalk', 'inquirer', { name: 'passport authentication', value: 'passport passport-local passport-jwt jsonwebtoken' } ]
+	// Offer to install suggested dev packages
+	const suggestedDevPackages = [ 'mocha', 'chai', 'nodemon' ]
+	// Initialize Git
+
+	const modules = await inquirer.prompt([
+		{
+			type: 'checkbox',
+			name: 'packages',
+			choices: suggestedPackages,
+			message: 'Select NPM Packages to Install - click Enter to select none'
+		},
+		{
+			type: 'checkbox',
+			name: 'dev_packages',
+			message: 'Select NPM Development Packages to Install - click Enter to select none',
+			choices: suggestedDevPackages
+		}
+	]);
+
+	const { git, customModules} = await inquirer.prompt([
+		{
+			type: 'confirm',
+			name: 'git',
+			message: 'Would you like git to be initialized'
+		},
+		{
+			type: 'confirm',
+			name: 'customModules',
+			message: 'Would you like to initialize custom modules?'
+		}
+	]);
+
+	if (customModules) {
+		
+	}
+
+	console.log('final answers', { name, appPath, modules });
+
+	return;
+
+	// Generate directory and package
+	console.log('\n -- Generating Directory and Initializing NPM -- \n');
+	try { 
+		process.stdout('  - Creating directory...')
+		await exec(`mkdir -p ${appPath}/${name}`);
+		console.log(chalk.green('complete'));
+	} catch(err) {
+		console.error(`[Error] - Error Generating Directory Location at: ${appPath}/${name}`, err);
+		process.exit(1);
+	}
+
+	// Initialize NPM	
+	try {
+		process.stdout('  - Initialize NPM...')
+		await exec(`npm init -y`, { cwd: appPath });
+		console.log(chalk.green('complete'));
+	} catch(err) {
+		console.error('[Error] - Error Initalizing NPM', err);
+		process.exit(1);
+	}
+
+	try {
+		process.stdout('  - Update Package.json...')
+		
+		/*  Update Package.json information  */
+
+		console.log(chalk.green('complete'));
+	} catch(err) {
+		console.error('[Error] - Error Initalizing NPM', err);
+		process.exit(1);
+	}
+
+	if(modules.packages.length > 0) {
+		try {
+			process.stdout('  - Install dependencies...')
+			
+			await exec(`npm install --save ${modules.dev_packages.join(' ')}`);
+	
+			console.log(chalk.green('complete'));
+		} catch(err) {
+			console.error('[Error] - Error installing dependencies', err);
+			process.exit(1);
+		}
+	} else {
+		console.log(`  - Install dependencies...${chalk.yellow('skipped (none selected)')}`)
+	}
+
+	if(modules.dev_packages.length > 0) {
+		try {
+			process.stdout('  - Install dev dependencies...')
+			
+			await exec(`npm install --save-dev ${modules.dev_packages.join(' ')}`);
+	
+			console.log(chalk.green('complete'));
+		} catch(err) {
+			console.error('[Error] - Error Error installing dependencies', err);
+			process.exit(1);
+		}
+	} else {
+		console.log(`  - Install dev dependencies...${chalk.yellow('skipped (none selected)')}`)
+	}
+
+	if (git) {
+		try {
+			process.stdout('  - Setup git...')
+			
+			await exec(`git init`);
+	
+			console.log(chalk.green('complete'));
+		} catch(err) {
+			console.error('[Error] - Error Error installing dependencies', err);
+			process.exit(1);
+		}
+	} else {
+		console.log(`  - Setup git...${chalk.yellow('skipped')}`)
+	}
+
+	if (customModules) {
+		try {
+			process.stdout('  - Setup Custom Modules...')
+			// Make module directory
+			await exec('mkdir modules', { cwd: appPath });
+
+
+			let loopOpen = true;
+			const customModuleList = [];
+			while (loopOpen) {
+				const mod = await inquirer.prompt([
+					{ type: 'input', name: 'name', message: 'Enter Module Name' }
+				]);
+			}
+	
+			console.log(chalk.green('complete'));
+		} catch(err) {
+			console.error('[Error] - Error Error installing dependencies', err);
+			process.exit(1);
+		}
+	} else {
+		console.log(`  - Setup git...${chalk.yellow('skipped')}`)
+	}	
 }
 
 /* -- Module Functions -- */
