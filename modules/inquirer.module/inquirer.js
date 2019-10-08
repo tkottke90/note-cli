@@ -49,6 +49,13 @@ const outputHeader = headerText => {
 	return `┌${widthStr}┐\n${output}\n└${widthStr}┘`;
 }
 
+const gitRepo = async () => {
+	if (!(await checkGit())) {
+		console.error(`${chalk.red('Invalid Directory - Missing GIT!')}`);
+		process.exit(1);
+	}
+}
+
 const notableParse = async () => {
 	// Check cwd for .notable_dir flag
 	const gitDir = await getGitLocation();
@@ -84,6 +91,9 @@ const notableParse = async () => {
 const excludeList = async () => {
 	console.log(chalk.hex('#BA5B50')(outputHeader(['Add files to Git Exclude file', '','   https://help.github.com/en/articles/ignoring-files#explicit-repository-excludes'])));
 	
+	// Check if cwd is a git repository
+	await gitRepo()
+
 	const { stdout: files } = await exec('git status -su', { cwd: process.cwd() });
 
 	const fileList = files.split('\n').filter( item => item.length > 1 && item.startsWith('?')).map( item => item.slice(3));
@@ -123,6 +133,9 @@ const excludeList = async () => {
 
 const commitPrompt = async () => {
 	console.log(chalk.hex('#BA5B50')(outputHeader(['Generate a new commit'])));
+
+	// Check if cwd is a git repository
+	await gitRepo()
 
 	const commitTypes = [ 
 		{ name: `feat      ${chalk.grey('(A new Feature)')}`, value: 'feat' },
@@ -303,16 +316,57 @@ const commitPrompt = async () => {
 
 }
 
+const generateNodeApp = async () => {
+	console.log(chalk.hex('#BA5B50')(outputHeader(['Generate New Node App'])));
+	
+	// Get name of application
+	let answers = await inquirer.prompt([
+		{
+			type: 'input',
+			name: 'name',
+			message: 'Enter name of your new node application'
+		}
+	]);
+
+	answers.path = [ '/home' ];
+
+	let dirNotSelected = true;
+	while (dirNotSelected) {
+			const files = await readDir(path.join(...answers.path));
+			const choices = [ ...files.filter( item => !item.startsWith('.')), new inquirer.Separator(), { name: 'Up 1 Level', value: '..' }, { name: 'Submit', value: true } ];
+
+			const { location } = await inquirer.prompt([
+				{
+					type: 'list',
+					name: 'location',
+					message: 'Select a directory or Submit to continue',
+					choices,
+					pageSize: choices.length
+				}
+			]);
+
+			if (location === '') {
+				return answers.path.pop();
+			}
+
+			if (typeof location === 'boolean') {
+				dirNotSelected = false;
+				answers.path = answers.path.join('/');
+				return;
+			}
+
+			answers.path.push(location);
+	} 
+
+	console.log(answers);
+}
+
 /* -- Module Functions -- */
 module.exports = async () => {
-	if (!(await checkGit())) {
-		console.error(`${chalk.red('Invalid Directory - Missing GIT!')}`);
-		process.exit(1);
-	}
-
 	return {
 		exclude: excludeList,
 		commit: commitPrompt,
-		notable: notableParse
+		notable: notableParse,
+		node: generateNodeApp
 	}
 }
