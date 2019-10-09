@@ -400,8 +400,14 @@ const generateNodeApp = async () => {
 		}
 	]);
 
-	if (customModules) {
-		
+	const addMoreModules = true;
+	const customModuleList = [];
+	while (customModules && addMoreModules) {
+		const newModule = await inquirer.prompt([
+			{ type: 'input', name: 'name', message: 'Enter Module Name', validate: (answer) => customModuleList.findIndex( item => item === answer) === -1 ? 'Module with that name already listed' : true },
+		]);
+
+		customModuleList.push()
 	}
 
 	console.log('final answers', { name, appPath, modules });
@@ -432,7 +438,18 @@ const generateNodeApp = async () => {
 	try {
 		process.stdout('  - Update Package.json...')
 		
-		/*  Update Package.json information  */
+		const packageJSON = readFile(path.join(appPath, 'package.json'));
+
+		console.log(chalk.green('complete'));
+	} catch(err) {
+		console.error('[Error] - Error Initalizing NPM', err);
+		process.exit(1);
+	}
+
+	try {
+		process.stdout('  - Creating index.js...')
+		
+		await exec('touch index.js', { cwd: appPath });
 
 		console.log(chalk.green('complete'));
 	} catch(err) {
@@ -491,18 +508,10 @@ const generateNodeApp = async () => {
 			// Make module directory
 			await exec('mkdir modules', { cwd: appPath });
 
-
-			let loopOpen = true;
-			const customModuleList = [];
-			while (loopOpen) {
-				const mod = await inquirer.prompt([
-					{ type: 'input', name: 'name', message: 'Enter Module Name' }
-				]);
-			}
 	
 			console.log(chalk.green('complete'));
 		} catch(err) {
-			console.error('[Error] - Error Error installing dependencies', err);
+			console.error('[Error] - Error Error installing custom modules', err);
 			process.exit(1);
 		}
 	} else {
