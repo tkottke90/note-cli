@@ -87,6 +87,32 @@ const notableParse = async () => {
 
 }
 
+/**
+ * Function to run prompt multiple times.  After each time, the user will be asked if they wish to add another
+ * @param {prompt[]} prompt Array of prompts to ask the user.
+ * @returns Array of answers.  If prompts include multiple questions, the returned value will be an array of objects
+ */
+const repeatingPrompt = async (prompts) => {
+	let done = false;
+	let data = [];
+	while (!done) {
+		const { _done, ...answers } = await inquirer.prompt([ 
+			...prompts,
+			{
+				type: 'confirm',
+				name: '_done',
+				message: 'Would you like to add another',
+				default: false
+			} 
+		]);
+
+		done = !_done;
+		data.push(answers);
+	}
+
+	return data;
+}
+
 /* -- Module Functions -- */
 const excludeList = async () => {
 	console.log(chalk.hex('#BA5B50')(outputHeader(['Add files to Git Exclude file', '','   https://help.github.com/en/articles/ignoring-files#explicit-repository-excludes'])));
@@ -354,7 +380,7 @@ const generateNodeApp = async () => {
 
 			if (location === '..') {
 				appPath.pop();
-				break;
+				continue;
 			}
 
 			if (typeof location === 'boolean') {
@@ -400,17 +426,23 @@ const generateNodeApp = async () => {
 		}
 	]);
 
-	const addMoreModules = true;
-	const customModuleList = [];
-	while (customModules && addMoreModules) {
-		const newModule = await inquirer.prompt([
-			{ type: 'input', name: 'name', message: 'Enter Module Name', validate: (answer) => customModuleList.findIndex( item => item === answer) === -1 ? 'Module with that name already listed' : true },
-		]);
+	const customModuleList = await repeatingPrompt([{ type: 'input', name: 'name', message: 'Enter Custom Module Name' }]);
 
-		customModuleList.push()
-	}
+	// let addMoreModules = true;
+	// let customModuleList = [];
+	// while (customModules && addMoreModules) {
+	// 	const { customName, addMoreConfirm } = await inquirer.prompt([
+	// 		{ type: 'input', name: 'customName', message: 'Enter Module Name', validate: (answer) => customModuleList.findIndex( item => item === answer) !== -1 ? 'Module with that name already listed' : true },
+	// 		{ type: 'confirm', name: 'addMoreConfirm', message: 'Save and add another', default: false }
+	// 	]);
 
-	console.log('final answers', { name, appPath, modules });
+	// 	addMoreModules = addMoreConfirm;
+	// 	customModuleList.push(customName);
+	// }
+
+
+
+	console.log('final answers', { name, appPath, modules, git, customModuleList });
 
 	return;
 
@@ -419,19 +451,31 @@ const generateNodeApp = async () => {
 	try { 
 		process.stdout('  - Creating directory...')
 		await exec(`mkdir -p ${appPath}/${name}`);
-		console.log(chalk.green('complete'));
+		console.log('\u2714');
 	} catch(err) {
-		console.error(`[Error] - Error Generating Directory Location at: ${appPath}/${name}`, err);
+		console.error(`\u274c ${chalk.red(`[Error] - Error Generating Directory Location at: ${appPath}/${name}`)}`, err);
 		process.exit(1);
 	}
 
 	// Initialize NPM	
 	try {
 		process.stdout('  - Initialize NPM...')
-		await exec(`npm init -y`, { cwd: appPath });
-		console.log(chalk.green('complete'));
+		const defaultPkg = { name , version: '1.0.0', description: '', main: 'index.js', scripts: { test: `echo 'Test Command'` }, keywords: [], author: '', license: 'MIT' };
+		// Check for Config File, if a npm_default config exists
+		if (await exists('./update-cli.conf')) {
+			const config = require('./update-cli.conf')['npm_default'];
+			const package = config || defaultPkg;
+
+			package.name = name;
+
+			await writeFile(path.join(appPath, 'package.json'), JSON.stringify(package));
+		} else {
+			
+		}
+
+		console.log('\u2714');
 	} catch(err) {
-		console.error('[Error] - Error Initalizing NPM', err);
+		console.error(`\u274c ${chalk.red('[Error] - Error Initalizing NPM')}`, err);
 		process.exit(1);
 	}
 
@@ -440,9 +484,9 @@ const generateNodeApp = async () => {
 		
 		const packageJSON = readFile(path.join(appPath, 'package.json'));
 
-		console.log(chalk.green('complete'));
+		console.log('\u2714');
 	} catch(err) {
-		console.error('[Error] - Error Initalizing NPM', err);
+		console.error(`\u274c ${chalk.red('[Error] - Error Initalizing NPM')}`, err);
 		process.exit(1);
 	}
 
@@ -451,7 +495,7 @@ const generateNodeApp = async () => {
 		
 		await exec('touch index.js', { cwd: appPath });
 
-		console.log(chalk.green('complete'));
+		console.log('\u2714');
 	} catch(err) {
 		console.error('[Error] - Error Initalizing NPM', err);
 		process.exit(1);
@@ -463,9 +507,9 @@ const generateNodeApp = async () => {
 			
 			await exec(`npm install --save ${modules.dev_packages.join(' ')}`);
 	
-			console.log(chalk.green('complete'));
+			console.log('\u2714');
 		} catch(err) {
-			console.error('[Error] - Error installing dependencies', err);
+			console.error(`\u274c ${chalk.red('[Error] - Error installing dependencies')}`, err);
 			process.exit(1);
 		}
 	} else {
@@ -478,9 +522,9 @@ const generateNodeApp = async () => {
 			
 			await exec(`npm install --save-dev ${modules.dev_packages.join(' ')}`);
 	
-			console.log(chalk.green('complete'));
+			console.log('\u2714');
 		} catch(err) {
-			console.error('[Error] - Error Error installing dependencies', err);
+			console.error(`\u274c ${chalk.red('[Error] - Error Error installing dependencies')}`, err);
 			process.exit(1);
 		}
 	} else {
@@ -493,9 +537,9 @@ const generateNodeApp = async () => {
 			
 			await exec(`git init`);
 	
-			console.log(chalk.green('complete'));
+			console.log('\u2714');
 		} catch(err) {
-			console.error('[Error] - Error Error installing dependencies', err);
+			console.error(`\u274c ${chalk.red('[Error] - Error installing dependencies')}`, err);
 			process.exit(1);
 		}
 	} else {
@@ -508,10 +552,11 @@ const generateNodeApp = async () => {
 			// Make module directory
 			await exec('mkdir modules', { cwd: appPath });
 
+			
 	
-			console.log(chalk.green('complete'));
+			console.log('\u2714');
 		} catch(err) {
-			console.error('[Error] - Error Error installing custom modules', err);
+			console.error(`\u274c ${chalk.red('[Error] - Error installing custom modules')}`, err);
 			process.exit(1);
 		}
 	} else {

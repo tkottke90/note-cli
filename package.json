@@ -17,6 +17,7 @@
     "inquirer.module": "file:modules/inquirer.module"
   },
   "devDependencies": {
+    "@types/node": "^12.7.12",
     "mocha": "^6.2.1",
     "nodemon": "^1.19.3"
   }
