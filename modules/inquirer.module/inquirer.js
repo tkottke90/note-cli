@@ -8,9 +8,14 @@ const { promisify } = require('util');
 /* -- Promisified Functions -- */
 const exec = promisify(child.exec);
 const exists = promisify(fs.exists);
+const mkdir = promisify(fs.mkdir);
 const readFile = promisify(fs.readFile);
 const readDir = promisify(fs.readdir);
 const writeFile = promisify(fs.writeFile);
+
+/* -- ASCII Characters -- */
+const CHECKMARK = '\u2714';
+const XMARK = '\u274c';
 
 /* -- Utility Functions -- */
 const getGitLocation = async () => {
@@ -390,7 +395,9 @@ const generateNodeApp = async () => {
 			}
 
 			appPath.push(location);
-	} 
+	};
+
+	appPath = path.join(appPath, name);
 
 	// Offer to install suggested production packages
 	const suggestedPackages = [ 'express', 'winston', { name: 'socket.io', value: 'socket.io socket.io-client'}, 'chalk', 'inquirer', { name: 'passport authentication', value: 'passport passport-local passport-jwt jsonwebtoken' } ]
@@ -426,51 +433,55 @@ const generateNodeApp = async () => {
 		}
 	]);
 
-	const customModuleList = await repeatingPrompt([{ type: 'input', name: 'name', message: 'Enter Custom Module Name' }]);
+	const customModuleList = customModules ? await repeatingPrompt([{ type: 'input', name: 'name', message: 'Enter Custom Module Name' }]) : false;
 
-	// let addMoreModules = true;
-	// let customModuleList = [];
-	// while (customModules && addMoreModules) {
-	// 	const { customName, addMoreConfirm } = await inquirer.prompt([
-	// 		{ type: 'input', name: 'customName', message: 'Enter Module Name', validate: (answer) => customModuleList.findIndex( item => item === answer) !== -1 ? 'Module with that name already listed' : true },
-	// 		{ type: 'confirm', name: 'addMoreConfirm', message: 'Save and add another', default: false }
-	// 	]);
+	// console.log('final answers', { name, appPath, modules, git, customModuleList });
 
-	// 	addMoreModules = addMoreConfirm;
-	// 	customModuleList.push(customName);
-	// }
+	console.log(outputHeader([
+		'Node.js Project Options:',
+		'',
+		`  Project Name: ${name}`,
+		`  Project Location: ${appPath}`,
+		`  Git Initialized: ${git ? 'Y' : 'N'}`,
+		'',
+		`  Project Dependencies:`,
+		...modules.packages.map( item => `      ${item}`),
+		...customModuleList ? customModuleList.map( item => `      ${item.name}(C)`) : '',
+		'',
+		`  Dev Dependencies:`,
+		...modules.dev_packages.map( item => `      ${item}`),
+	]));
 
+	const { correct } = await inquirer.prompt([{ type: 'confirm', name: 'correct', message: 'Does everything look correct?' }]);
+	if (!correct) {
+		console.log(' -- Exiting Project Creation - Exited by User --');
+		process.exit(0);
+	}
 
-
-	console.log('final answers', { name, appPath, modules, git, customModuleList });
-
-	return;
 
 	// Generate directory and package
-	console.log('\n -- Generating Directory and Initializing NPM -- \n');
+	console.log('\n -- Generating Directory and Initializing Node App -- \n');
 	try { 
-		process.stdout('  - Creating directory...')
-		await exec(`mkdir -p ${appPath}/${name}`);
+		process.stdout.write('  - Creating directory...')
+		await exec(`mkdir -p ${appPath}`);
 		console.log('\u2714');
 	} catch(err) {
-		console.error(`\u274c ${chalk.red(`[Error] - Error Generating Directory Location at: ${appPath}/${name}`)}`, err);
+		console.error(`\u274c ${chalk.red(`[Error] - Error Generating Directory Location at: ${appPath}`)}`, err);
 		process.exit(1);
 	}
 
 	// Initialize NPM	
 	try {
-		process.stdout('  - Initialize NPM...')
-		const defaultPkg = { name , version: '1.0.0', description: '', main: 'index.js', scripts: { test: `echo 'Test Command'` }, keywords: [], author: '', license: 'MIT' };
+		process.stdout.write('  - Initialize NPM...')
+		const defaultPkg = { name , version: '1.0.0', description: '', main: 'index.js', scripts: { test: `echo 'Test Command'`, start: 'node index.js' }, keywords: [], author: '', license: 'MIT' };
 		// Check for Config File, if a npm_default config exists
 		if (await exists('./update-cli.conf')) {
 			const config = require('./update-cli.conf')['npm_default'];
 			const package = config || defaultPkg;
 
-			package.name = name;
-
 			await writeFile(path.join(appPath, 'package.json'), JSON.stringify(package));
 		} else {
-			
+			await writeFile(path.join(appPath, 'package.json'), JSON.stringify(defaultPkg));
 		}
 
 		console.log('\u2714');
@@ -480,18 +491,7 @@ const generateNodeApp = async () => {
 	}
 
 	try {
-		process.stdout('  - Update Package.json...')
-		
-		const packageJSON = readFile(path.join(appPath, 'package.json'));
-
-		console.log('\u2714');
-	} catch(err) {
-		console.error(`\u274c ${chalk.red('[Error] - Error Initalizing NPM')}`, err);
-		process.exit(1);
-	}
-
-	try {
-		process.stdout('  - Creating index.js...')
+		process.stdout.write('  - Creating index.js...')
 		
 		await exec('touch index.js', { cwd: appPath });
 
@@ -503,9 +503,9 @@ const generateNodeApp = async () => {
 
 	if(modules.packages.length > 0) {
 		try {
-			process.stdout('  - Install dependencies...')
+			process.stdout.write('  - Install dependencies...')
 			
-			await exec(`npm install --save ${modules.dev_packages.join(' ')}`);
+			await exec(`npm install --save ${modules.dev_packages.join(' ')}`, { cwd: appPath });
 	
 			console.log('\u2714');
 		} catch(err) {
@@ -518,9 +518,9 @@ const generateNodeApp = async () => {
 
 	if(modules.dev_packages.length > 0) {
 		try {
-			process.stdout('  - Install dev dependencies...')
+			process.stdout.write('  - Install dev dependencies...')
 			
-			await exec(`npm install --save-dev ${modules.dev_packages.join(' ')}`);
+			await exec(`npm install --save-dev ${modules.dev_packages.join(' ')}`, { cwd: appPath });
 	
 			console.log('\u2714');
 		} catch(err) {
@@ -533,9 +533,10 @@ const generateNodeApp = async () => {
 
 	if (git) {
 		try {
-			process.stdout('  - Setup git...')
+			process.stdout.write('  - Setup git...')
 			
-			await exec(`git init`);
+			await exec(`git init`, { cwd: appPath });
+			await exec(`touch README.md`, { cwd: appPath })
 	
 			console.log('\u2714');
 		} catch(err) {
@@ -547,21 +548,82 @@ const generateNodeApp = async () => {
 	}
 
 	if (customModules) {
+		createModule = (name) => ({ name , version: '1.0.0', description: '', main: 'index.js', scripts: { test: `echo 'Test Command'`, start: 'node index.js' }, keywords: [], author: '', license: 'MIT' }); 
+
 		try {
-			process.stdout('  - Setup Custom Modules...')
+			process.stdout.write('  - Setup Custom Modules...')
 			// Make module directory
 			await exec('mkdir modules', { cwd: appPath });
 
-			
+			const output = [];
+
+			const moduleProcess = customModuleList.map( async item => {
+				let outputStr = `    Module: ${item.name}\n      Create Dir: `;
+				// Create Directory
+				try {
+					await mkdir(path.join(appPath, 'modules', item.name));
+					outputStr += `${CHECKMARK}`;
+				} catch (err) {
+					outputStr += `${XMARK}`;
+				}
+				
+				// Write package.json
+				try {
+					outputStr += '\n      Creating package.json:';
+					await writeFile(path.join(appPath, 'modules', item.name, 'package.json'), JSON.stringify(createModule(item.name)));
+					outputStr += `${CHECKMARK}`;
+				} catch (err) {
+					outputStr += `${XMARK}`;
+				}
 	
-			console.log('\u2714');
+				// Create index.js file
+				try {
+					outputStr += '\n      Creating index.js:';
+					const defaultIndexFile = `/* Module Imports */\n\n\nmodule.exports = () => {\n\n}`
+					await writeFile(path.join(appPath, 'modules', item.name, 'index.js'), defaultIndexFile);
+					outputStr += `${CHECKMARK}`;
+				} catch (err) {
+					outputStr += `${XMARK}`;
+				}
+				
+				// Create README.md
+				try {
+					outputStr += '\n      Create README.md:';
+					const defaultReadme = `# ${item.name}`
+					await writeFile(path.join(appPath, 'modules', item.name, 'index.js'), defaultReadme);
+					outputStr += `${CHECKMARK}`;
+				} catch (err) {
+					outputStr += `${XMARK}`;
+				}
+
+				// Install in main application
+				try {
+					outputStr += '\n      Installing In Project:'
+					await exec(`npm install ./modules/${item.name}`, { cwd: appPath });
+					outputStr += `${CHECKMARK}`;
+				} catch (err) {
+					outputStr += `${XMARK}\n`;
+				}
+			
+				// console.log(outputStr);
+				output.push(outputStr);
+			})
+			
+
+			await Promise.all(moduleProcess);
+
+			console.log(CHECKMARK);
+			console.log(output.join(''));
 		} catch(err) {
-			console.error(`\u274c ${chalk.red('[Error] - Error installing custom modules')}`, err);
+			console.error(`${XMARK} ${chalk.red('[Error] - Error installing custom modules')}`, err);
 			process.exit(1);
 		}
 	} else {
-		console.log(`  - Setup git...${chalk.yellow('skipped')}`)
+		console.log(`  - Setup custom modules...${chalk.yellow('skipped')}`)
 	}	
+
+
+	console.log(`\n -- Node Project Setup -- \n`);
 }
 
 /* -- Module Functions -- */
