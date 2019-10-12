@@ -1,28 +1,30 @@
 #!/usr/bin/env node
-const [,, command, ...args] = process.argv;
+const program = require('commander');
+const { version } = require('./package.json');
 
 const initialize = async () => {
 	const cli = await require('inquirer.module')();
 
-	if (!cli[command]) {
-		console.log(`
+	program.version(version);
 
-Invalid Command: ${command}
-		
+	program
+		.command('node')
+		.description('Script to generate a new node.js application')
+		.action( () => cli.node());
 
-Usage: update-notes <command> [options]
+	program
+		.command('commit')
+		.description('Script to submit a Git commit with a prompted message')
+		.action( () => cli.commit());
 
-Commands:
-  exclude - add untracked files to local file exclusion .git/info/exclude
-  commit - cli interface for generating and committing files
-		`);
-		process.exit(0);
-	}
+	program
+		.command('exclude')
+		.description('Script to add files to .git/info/exclude')
+		.action( () => cli.exclude());
 
-	cli[command]();
+	program.parse(process.argv);
 
+	if (!program.args.length) program.help();
 }
 
-console.clear();
-console.log('--- Note-CLI Tool ---')
 initialize();

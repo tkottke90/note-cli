@@ -628,6 +628,9 @@ const generateNodeApp = async () => {
 
 /* -- Module Functions -- */
 module.exports = async () => {
+	console.clear();
+	console.log(`=== Update CLI Tool ===\n`);
+
 	return {
 		exclude: excludeList,
 		commit: commitPrompt,

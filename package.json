@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "commander": "^3.0.2",
     "inquirer.module": "file:modules/inquirer.module"
   },
   "devDependencies": {
